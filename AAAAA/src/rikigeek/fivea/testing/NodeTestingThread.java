@@ -1,4 +1,4 @@
-package rikigeek.aaaaa.testing;
+package rikigeek.fivea.testing;
 
 public class NodeTestingThread extends Thread {
 	String[] sArgs;
@@ -8,7 +8,7 @@ public class NodeTestingThread extends Thread {
 	}
 	public void run() {
 		try {
-			rikigeek.aaaaa.Main.main(sArgs);
+			rikigeek.fivea.Main.main(sArgs);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

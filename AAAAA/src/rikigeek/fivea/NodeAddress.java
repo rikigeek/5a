@@ -1,4 +1,4 @@
-package rikigeek.aaaaa;
+package rikigeek.fivea;
 
 import java.io.Serializable;
 

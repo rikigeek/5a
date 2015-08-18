@@ -1,4 +1,4 @@
-package rikigeek.aaaaa;
+package rikigeek.fivea;
 
 import java.io.BufferedReader;
 import java.util.logging.*;

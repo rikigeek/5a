@@ -1,4 +1,4 @@
-package rikigeek.aaaaa;
+package rikigeek.fivea;
 
 import java.util.ArrayList;
 import java.util.logging.ConsoleHandler;

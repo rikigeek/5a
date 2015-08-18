@@ -1,4 +1,4 @@
-package rikigeek.aaaaa;
+package rikigeek.fivea;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

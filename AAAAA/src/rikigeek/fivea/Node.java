@@ -1,12 +1,12 @@
-package rikigeek.aaaaa;
+package rikigeek.fivea;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
-import rikigeek.aaaaa.Message.Subject;
-import rikigeek.aaaaa.Message.Verb;
+import rikigeek.fivea.Message.Subject;
+import rikigeek.fivea.Message.Verb;
 
 public class Node {
 	

@@ -1,4 +1,4 @@
-package rikigeek.aaaaa.testing;
+package rikigeek.fivea.testing;
 
 public class Main {
 

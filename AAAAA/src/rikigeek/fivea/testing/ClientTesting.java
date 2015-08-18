@@ -1,4 +1,4 @@
-package rikigeek.aaaaa.testing;
+package rikigeek.fivea.testing;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -6,8 +6,8 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import rikigeek.aaaaa.*;
-import rikigeek.aaaaa.Message.Subject;
+import rikigeek.fivea.*;
+import rikigeek.fivea.Message.Subject;
 
 public class ClientTesting {
 	private Socket socket;
