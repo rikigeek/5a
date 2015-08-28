@@ -17,15 +17,15 @@ public class ThreadFormatter extends Formatter {
 		sb.append(" ");
 		sb.append(record.getLevel().getName());
 		sb.append("\t: ");
-		sb.append(formatMessage(record));
-		sb.append(", ");
 		sb.append("[");
-		sb.append(record.getLoggerName());
-		sb.append("-");
 		sb.append("T#");
 		sb.append(record.getThreadID());
+		sb.append("-");
+		sb.append(record.getLoggerName());
 		sb.append("], ");
 		sb.append(record.getSourceClassName() + "." + record.getSourceMethodName());
+		sb.append(", ");
+		sb.append(formatMessage(record));
 		sb.append(System.lineSeparator());
 		return sb.toString();
 	}

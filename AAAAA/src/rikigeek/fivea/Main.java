@@ -7,6 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import rikigeek.fivea.entities.MessageNodeAddress;
+
 public class Main {
 	public static void main(String args[]) throws Exception {
 		// Logging configuration
@@ -29,7 +31,7 @@ public class Main {
 		int port = 0;
 		String contact = "";
 		int contactPort;
-		NodeAddress contactNode = null;
+		MessageNodeAddress contactNode = null;
 
 		// no error check... exception will be thrown to the console
 		int argc = args.length;
@@ -46,7 +48,7 @@ public class Main {
 			String s[] = contact.split(":");
 			contactPort = Integer.parseInt(s[1]);
 			contact = s[0];
-			contactNode = new NodeAddress(contact, contactPort);
+			contactNode = new MessageNodeAddress(contact, contactPort);
 			// Eventually get the port number
 			if (argc > 1) {
 				// the TCP port

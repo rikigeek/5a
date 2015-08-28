@@ -1,4 +1,4 @@
-package rikigeek.fivea;
+package rikigeek.fivea.exception;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 // TODO : extends from a global "Exception Reporter". This reporter will log everything

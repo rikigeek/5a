@@ -7,6 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import rikigeek.fivea.*;
+import rikigeek.fivea.entities.Message;
+import rikigeek.fivea.entities.MessageNodeAddress;
 
 public class ClientTesting {
 	private Socket socket;
@@ -21,7 +23,7 @@ public class ClientTesting {
 		ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 		ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 		
-		Message msg = Message.stop(new NodeAddress("TOTO", 2121), "Données".getBytes());
+		Message msg = Message.stop(new MessageNodeAddress("TOTO", 2121), "Données".getBytes());
 		LOGGER.info("Starting client");
 		//String toto = new String("TOTO");
 		

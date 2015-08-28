@@ -6,6 +6,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.logging.Logger;
 
+import rikigeek.fivea.entities.Message;
+import rikigeek.fivea.entities.MessageNodeAddress;
+
 
 /**
  * The speaker is the class that communicates with other nodes
@@ -23,13 +26,28 @@ public class Speaker {
 	private Socket socket;
 	private ObjectOutputStream outputStream;
 	private ObjectInputStream inputStream;
-	private NodeAddress destNode;
+	private MessageNodeAddress destNode;
 	private boolean connected = false;
 
-	public Speaker(NodeAddress dest) {
+	/**
+	 * Create a new instance and connect to the dest node
+	 * @param dest
+	 */
+	public Speaker(MessageNodeAddress dest) {
 		open(dest);
 	}
-	public boolean open(NodeAddress dest) {
+	/**
+	 * Create a new instance, but don't connect to any node
+	 */
+	public Speaker() {
+		connected = false;
+	}
+	/**
+	 * Open a connection to the remote Node
+	 * @param dest
+	 * @return true if the connection succeeded
+	 */
+	public boolean open(MessageNodeAddress dest) {
 		if (connected) {
 			// If the speaker is already connected, we must close it before
 			close();
@@ -55,6 +73,9 @@ public class Speaker {
 
 	}
 
+	/**
+	 * Close the connection to the remote node
+	 */
 	public void close() {
 		// Closing everything
 		LOGGER.fine("closing streams and socket");
@@ -69,6 +90,11 @@ public class Speaker {
 
 	}
 
+	/**
+	 * Send a message to the connected node
+	 * @param msg
+	 * @return the message we got as an answer (null if no response was expected)
+	 */
 	public Message sendMessage(Message msg) {
 		if (!connected) {
 			// The socket is not connected.
@@ -85,7 +111,7 @@ public class Speaker {
 			outputStream.flush();
 
 			// And we try to read the response, only if message is a question
-			if (msg.question) {
+			if (msg.needAnswer()) {
 				try {
 					Object obj;
 					obj = inputStream.readObject();
@@ -96,6 +122,10 @@ public class Speaker {
 					if (obj instanceof Message) {
 						LOGGER.fine("Object is a message");
 						response = (Message) obj;
+					} 
+					else {
+						LOGGER.warning("Object is not a message");
+						response = null;
 					}
 				} catch (ClassNotFoundException e) {
 					LOGGER.warning("Failure to get response");
@@ -112,6 +142,10 @@ public class Speaker {
 
 	}
 
+	/**
+	 * Is the speaker connected to a node ?
+	 * @return
+	 */
 	public boolean isConnected() {
 		return connected;
 	}

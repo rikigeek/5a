@@ -1,8 +1,8 @@
-package rikigeek.fivea;
+package rikigeek.fivea.entities;
 
 import java.io.Serializable;
 
-public class NodeAddress implements Serializable {
+public class MessageNodeAddress implements Serializable {
 	/**
 	 * 
 	 */
@@ -15,7 +15,7 @@ public class NodeAddress implements Serializable {
 	 * @param ip DNS name, or ip address of the remote node
 	 * @param port TCP port of the remote node
 	 */
-	public NodeAddress(String ip, int port) {
+	public MessageNodeAddress(String ip, int port) {
 		this.ip = ip;
 		this.port = port;
 	}

@@ -2,6 +2,8 @@ package rikigeek.fivea;
 
 import java.util.logging.Logger;
 
+import rikigeek.fivea.entities.Message;
+
 // Class to dispatch a "REPLICATION" message
 public class DispatchReplication implements Runnable {
 	private static Logger LOGGER = Logger.getLogger(Dispatcher.class.getName());
