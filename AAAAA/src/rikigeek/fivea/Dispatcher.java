@@ -48,15 +48,18 @@ public class Dispatcher implements Runnable {
 						switch (msg.subject) {
 						case CONSULT:
 							LOGGER.info("Received consultation message");
+							DispatchConsult.getInstance().threatMessage(msg, this.node);
 							break;
 						case CONFIG:
 							LOGGER.info("Received configuration message");
 							break;
 						case CONNECTION:
 							LOGGER.info("Received connection message ID1");
+							DispatchConnection.getInstance().threatMessage(msg, this.node);
 							break;
 						case REPLICATION:
 							LOGGER.info("Received replication message");
+							DispatchReplication.getInstance().threatMessage(msg, this.node);
 							break;
 						case RESERVED: 
 							LOGGER.info("Received reserved message");

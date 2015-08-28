@@ -10,6 +10,9 @@ import java.util.logging.Logger;
 /**
  * The speaker is the class that communicates with other nodes
  * 
+ * usage : s = Speaker(node to connect)
+ * s.sendMessage(message to send)
+ * 
  * @author Rikigeek
  *
  */
@@ -24,12 +27,12 @@ public class Speaker {
 	private boolean connected = false;
 
 	public Speaker(NodeAddress dest) {
-		Open(dest);
+		open(dest);
 	}
-	public boolean Open(NodeAddress dest) {
+	public boolean open(NodeAddress dest) {
 		if (connected) {
 			// If the speaker is already connected, we must close it before
-			Close();
+			close();
 		}
 		// Save the node we want to connect to
 		this.destNode = dest;
@@ -52,7 +55,7 @@ public class Speaker {
 
 	}
 
-	public void Close() {
+	public void close() {
 		// Closing everything
 		LOGGER.fine("closing streams and socket");
 		try {
@@ -66,7 +69,7 @@ public class Speaker {
 
 	}
 
-	public Message SendMessage(Message msg) {
+	public Message sendMessage(Message msg) {
 		if (!connected) {
 			// The socket is not connected.
 			LOGGER.warning("Unable to send the message, we are not connected");
@@ -81,20 +84,22 @@ public class Speaker {
 			outputStream.writeObject(msg);
 			outputStream.flush();
 
-			// And we try to read the response
-			try {
-				Object obj;
-				obj = inputStream.readObject();
-				LOGGER.fine("received object : " + obj.getClass().getName()
-						+ " = " + obj.toString());
-
-				// Check if the response is a message
-				if (obj instanceof Message) {
-					LOGGER.fine("Object is a message");
-					response = (Message) obj;
+			// And we try to read the response, only if message is a question
+			if (msg.question) {
+				try {
+					Object obj;
+					obj = inputStream.readObject();
+					LOGGER.fine("received object : " + obj.getClass().getName()
+							+ " = " + obj.toString());
+	
+					// Check if the response is a message
+					if (obj instanceof Message) {
+						LOGGER.fine("Object is a message");
+						response = (Message) obj;
+					}
+				} catch (ClassNotFoundException e) {
+					LOGGER.warning("Failure to get response");
 				}
-			} catch (ClassNotFoundException e) {
-				LOGGER.warning("Failure to get response");
 			}
 
 		} catch (IOException e) {

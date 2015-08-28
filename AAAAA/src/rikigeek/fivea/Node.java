@@ -21,6 +21,11 @@ public class Node {
 	private NodeAddress father;
 	private NodeAddress grandFather;
 	private NodeAddress myAddress;
+	
+	// flag to indicate election mode 
+	private boolean election = false;
+	// Flag to indicate that the father is lost
+	private boolean fatherLost = false;
 
 	private String localName;
 	
@@ -67,31 +72,7 @@ public class Node {
 	public Node(NodeAddress contact, int port) {
 		this(port);
 		
-		LOGGER.info("Trying to connect to " + contact);
-		// And now, we try to connect to the domain
-		// At creation, we need to find a place in the domain.
-		Message msg = new Message();
-		msg.subject = Subject.CONNECTION;
-		msg.sourceNodeAddress = getAddress();
-		msg.verb = Verb.INSERT;
-		msg.question = true;
-		
-		
-		// Send the message and wait for the result
-		Speaker speaker = new Speaker(contact);
-		if (speaker.isConnected()) {
-			Message response = speaker.SendMessage(msg);
-			// The response contains the node we should connect to
-
-			speaker.Close();
-			if (response!= null && response.father != null) {
-				speaker.Open(response.father);
-				msg.data = new String("CONNECT").getBytes();
-				msg.sourceNodeAddress = getAddress();
-			}
-		}
-		speaker.Close();
-		LOGGER.info("Node is connected...");
+		newNode(contact);
 		
 	}
 	
@@ -138,13 +119,77 @@ public class Node {
 	}
 	
 	/**
-	 * Connection to a domain, using a node address
+	 * Insertion into an existing domain, using a node address
+	 * @param contact the nodeAddress of an existing node
 	 * @return 
 	 */
-	public boolean connect(String node) {
+	public boolean newNode(NodeAddress contact) {
 		// 
+		LOGGER.info("Asking " + contact + " for a new father");
+		// And now, we try to connect to the domain
+		// At creation, we need to find a place in the domain.
+		Message msg = Message.newNode(this.getAddress(), contact);
+		
+		// Send the message and wait for the result
+		Speaker speaker = new Speaker(contact);
+		if (speaker.isConnected()) {
+			Message response = speaker.sendMessage(msg);
+			// The response contains the node we should connect to
+			speaker.close();
+			if (response.isOk() && response.father != null) {
+				LOGGER.info("we found a new father... : " + response.father);
+				return connect(response.father);
+			}
+			else {
+				LOGGER.severe(contact + " could not find a father for us");
+
+			}
+		}
+		else {
+			LOGGER.warning("Could not connect to " + contact);
+		}
 		return false;
 	}
 	
-	
+	public boolean connect(NodeAddress father) {
+		LOGGER.info("Trying to connect to a new father : " + father);
+		Speaker speaker = new Speaker(father);
+		if (speaker.isConnected()) {
+			Message msg = Message.connect(this.getAddress(),  father);
+			Message response = speaker.sendMessage(msg);
+			speaker.close();
+			if (response.isOk()) {
+				// Message is ok. Retrieving father, grandFather, and brothers;
+				this.father = response.father;
+				this.grandFather = response.grandFather;
+				this.brothers = response.brothers;
+				LOGGER.info("Node is connected...");
+				return true;
+			}
+			else {
+				LOGGER.severe("father " + father + " refused us :(");
+			}
+			
+		}
+		else {
+			LOGGER.warning("Could not connect to father " + father);
+		}
+		return false;
+		
+	}
+	/**
+	 * Set the election mode
+	 * @param b
+	 */
+	public void setElectionFlag(boolean b) {
+		this.election = b;
+		
+	}
+	/**
+	 * Defines if the father is lost
+	 * @param b
+	 */
+	public void setFatherLostFlag(boolean b) {
+		this.fatherLost = b;
+	}
 }
