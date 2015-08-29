@@ -44,16 +44,22 @@ public class Listener implements Runnable {
 		return port;
 	}
 	
-	private boolean IsStopped() {
-		return isStopped;
+	private boolean isStopped() {
+		return node.isStopped();
+	}
+	
+	private ServerSocket socket;
+	public void stop() throws IOException {
+		// force the listener to close the server socket, and then exit the thread
+		socket.close();
 	}
 	@Override
 	public void run() {
-		ServerSocket socket;
+		//ServerSocket socket;
 		LOGGER.info("Waiting for a connection on port " + port);
 		try {
 			socket = new ServerSocket(port);
-			while (!IsStopped()) { // Infinite loop to wait for new connection
+			while (!isStopped()) { // Infinite loop to wait for new connection
 				Socket connection;
 				try {
 					connection = socket.accept();

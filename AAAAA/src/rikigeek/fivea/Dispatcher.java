@@ -66,7 +66,7 @@ public class Dispatcher implements Runnable {
 							LOGGER.info("Received configuration message");
 							break;
 						case CONNECTION:
-							LOGGER.info("Received connection message ID1");
+							LOGGER.info("Received connection message");
 							response = new DispatchConnection().threatMessage(
 									receivedMessage, node);
 							break;
@@ -86,13 +86,13 @@ public class Dispatcher implements Runnable {
 						if (receivedMessage.needAnswer()) {
 							if (response != null) {
 								// The response from the dispatcher is a class instance, we can answer with this
-								LOGGER.fine("Send the response to the client");
-								outputStream.writeObject(response);
-								outputStream.flush();
 							} else {
 								// no response provided, but the client wait for a response. Send him a default error message
 								response = Message.noOk(node.getAddress(), receivedMessage);
 							}
+							LOGGER.fine("Send the response to the client " + response);
+							outputStream.writeObject(response);
+							outputStream.flush();
 						}
 					} else {
 						LOGGER.warning("Received an object with wrong class : "

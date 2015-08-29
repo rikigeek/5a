@@ -23,6 +23,9 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 		return this.hashCode() - o.hashCode();
 	}
 	
-	
+	 @Override
+	 public int hashCode() {
+		 return this.toString().hashCode();
+	 }
 
 }
