@@ -87,6 +87,7 @@ public class Speaker {
 			LOGGER.warning("Failed to close the speaker");
 			LOGGER.throwing("Speaker", "Close", e);
 		}
+		connected = false;
 
 	}
 
@@ -102,7 +103,8 @@ public class Speaker {
 			return null;
 		}
 		LOGGER.info("Sending a message to " + destNode);
-		Message response = null;
+		// Default answer is a positive answer
+		Message response = Message.ok(msg.getSource(), msg);
 
 		try {
 
@@ -125,10 +127,11 @@ public class Speaker {
 					} 
 					else {
 						LOGGER.warning("Object is not a message");
-						response = null;
+						response = Message.noOk(this.destNode, msg);
 					}
 				} catch (ClassNotFoundException e) {
 					LOGGER.warning("Failure to get response");
+					response = Message.noOk(this.destNode, msg);
 				}
 			}
 
@@ -136,6 +139,7 @@ public class Speaker {
 			// Happens if sockets or Data Streams fail
 			LOGGER.warning("Failed to send or receive the message");
 			LOGGER.throwing("Speaker", "SendMessage", e);
+			response = Message.noOk(this.destNode, msg);
 		}
 
 		return response;

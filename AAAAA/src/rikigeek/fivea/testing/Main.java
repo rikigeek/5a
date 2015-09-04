@@ -1,9 +1,6 @@
 package rikigeek.fivea.testing;
 
-import java.util.concurrent.ConcurrentSkipListSet;
 
-import rikigeek.fivea.entities.MessageNodeAddress;
-import rikigeek.fivea.entities.NodeAddress;
 
 public class Main {
 
@@ -18,11 +15,11 @@ public class Main {
 		
 		NodeTestingThread node1 = new NodeTestingThread(pArgs);
 		node1.start();
-		Thread.sleep(10000);
+		Thread.sleep(1000);
 		int firstPort = 20159;
 		pArgs = new String[2];
 		pArgs[0] = "localhost:20158";
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 5; i++) {
 			pArgs[1] = String.format("%d", firstPort + i);
 			NodeTestingThread node = new NodeTestingThread(pArgs);
 			node.start();
@@ -39,7 +36,7 @@ public class Main {
 //		
 //		for (int i = 0; i < list.length; i++) System.out.println(list[i]);
 		
-
+		System.out.printf("%s %s RETURN", Main.class.getCanonicalName(), "static main(..)");
 
 	}
 }

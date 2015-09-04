@@ -6,7 +6,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 
-import rikigeek.fivea.console.Console;
 import rikigeek.fivea.entities.Message;
 import rikigeek.fivea.entities.MessageNodeAddress;
 import rikigeek.fivea.entities.NodeAddress;
@@ -28,7 +27,7 @@ public class Node {
 		return quit;
 	}
 
-	private boolean quit = false;
+	boolean quit = false;
 
 	// list of other nodes addresses
 	private NodeAddress myAddress;
@@ -39,7 +38,11 @@ public class Node {
 	/**
 	 * Listener that will "listen" to all other nodes
 	 */
-	private Listener listener;
+	Listener listener;
+	/**
+	 * The thread that listens on the server Socket (the listener Thread)
+	 */
+	Thread threadListener;
 
 	/**
 	 * The domain the node is member of
@@ -71,7 +74,7 @@ public class Node {
 		// Build the listener
 		LOGGER.info("Starting the listener");
 		listener = new Listener(this, port);
-		Thread threadListener = new Thread(listener);
+		threadListener = new Thread(listener);
 		threadListener.start();
 
 		// Update the NodeAddress
@@ -83,18 +86,6 @@ public class Node {
 		LOGGER.fine("Node #" + this.hashCode() + " / domainNodeList #"
 				+ domainNodeList.hashCode() + " " + domainNodeList.size()
 				+ " elements");
-
-		// Start the client console
-		new Console(this).start();
-
-		this.quit = true;
-		threadListener.interrupt(); // force the thread to wakeup and so to exit
-		try {
-			listener.stop();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	public Node(String domainName, int port) {
@@ -102,15 +93,18 @@ public class Node {
 		// And now, we create a new domain
 		LOGGER.info("Creation of new domain : " + domainName);
 		this.domain = domainName;
+		
+		LOGGER.exiting(this.getClass().getCanonicalName(), "<Constructor(String, int)>");
 	}
 
 	public Node(MessageNodeAddress contact, int port) {
 		this(port);
-
+		LOGGER.info("Trying to contact existing domain through node : " + contact);
 		newNode(contact);
-
+		
+		LOGGER.exiting(this.getClass().getCanonicalName(), "<Constructor(MessageNodeAddress, int)>");
 	}
-
+	
 	/**
 	 * Try to find the local host name of the node
 	 * 
@@ -196,6 +190,23 @@ public class Node {
 			LOGGER.warning("Could not connect to " + contact);
 		}
 		return false;
+	}
+	
+	public void stopNode() {
+		// Create a dispatcher
+		DispatchConnection dconn = new DispatchConnection(this);
+		// And ask to stop the node
+		dconn.stopNode();
+		// and now we can really stop the node
+		quit = true;
+		try {
+			listener.stop();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		threadListener.interrupt(); // force the thread to wakeup and so to exit
+		
 	}
 
 }

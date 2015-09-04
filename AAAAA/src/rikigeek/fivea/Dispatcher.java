@@ -64,11 +64,12 @@ public class Dispatcher implements Runnable {
 							break;
 						case CONFIG:
 							LOGGER.info("Received configuration message");
+							response = new DispatchConfig(node).receivesMessage(receivedMessage);
 							break;
 						case CONNECTION:
 							LOGGER.info("Received connection message");
-							response = new DispatchConnection().threatMessage(
-									receivedMessage, node);
+							response = new DispatchConnection(node).receivesMessage(
+									receivedMessage);
 							break;
 						case REPLICATION:
 							LOGGER.info("Received replication message");

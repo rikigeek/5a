@@ -1,15 +1,18 @@
 package rikigeek.fivea;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import rikigeek.fivea.console.Console;
 import rikigeek.fivea.entities.MessageNodeAddress;
 
 public class Main {
+	private static Logger LOGGER = Logger.getLogger(Main.class.getName());
+	
 	public static void main(String args[]) throws Exception {
 		// Logging configuration
 		Logger root = LogManager.getLogManager().getLogger("");
@@ -56,21 +59,43 @@ public class Main {
 			}
 		}
 
+		LOGGER.finest("choosing listening port");
 		// Setting default listening port if not set
-		if (port == 0)
+		if (port == 0) {
+			LOGGER.config("using default port : " + Listener.DEFAULT_PORT);
 			port = Listener.DEFAULT_PORT;
-
+		}
 		// Parameters are parsed
+		LOGGER.finest("Building the node");
 		Node node;
 		if (contactNode != null) {
 			// Join a domain
 			node = new Node(contactNode, port);
+			LOGGER.finest("the node is built");
 		} else {
 			// New domain
 			node = new Node(domainName, port);
+			LOGGER.finest("A new domain is created, and the node is built");
 		}
 
 		// Create a client to send data to itself
 		//new rikigeek.aaaaa.testing.ClientTesting();
+		
+		startConsole(node);
+		
+		LOGGER.exiting(Main.class.getCanonicalName(), "static main(...)");
 	}
+	
+	/** 
+	 * Blocking method : this method returns only when the program must quit
+	 */
+	private static void startConsole(Node node) {
+		LOGGER.info("Starting console in current Thread");
+		// Start the client console
+		new Console(node).start();
+
+		LOGGER.info("Console is closed, the node must stop");
+		node.stopNode();
+	}
+
 }

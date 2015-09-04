@@ -11,12 +11,16 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 	
 	public NodeAddress(String ip, int port) {
 		super(ip, port);
-		// TODO Auto-generated constructor stub
+		hashValue = this.hashCode();
+	}
+	public NodeAddress(String ip, int port, boolean active, int logicalClock) {
+		super(ip, port, active, logicalClock);
+		// localy save the hashcode (to prevent recalculation ?)
 		hashValue = this.hashCode();
 	}
 
 	public NodeAddress(MessageNodeAddress nodeAddress) {
-		this(nodeAddress.getIpAddress(), nodeAddress.getTCPPort());
+		this(nodeAddress.getIpAddress(), nodeAddress.getTCPPort(), nodeAddress.isActive(), nodeAddress.getLogicalClock());
 	}
 	@Override
 	public int compareTo(NodeAddress o) {
@@ -25,7 +29,11 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 	
 	 @Override
 	 public int hashCode() {
-		 return this.toString().hashCode();
+		 // TODO : return the hashvalue cache ?
+		 int hash = 1;
+		 hash = hash * 17 + this.getTCPPort();
+		 hash = hash * 34 + this.getIpAddress().hashCode();
+		 return hash;
 	 }
 
 }
