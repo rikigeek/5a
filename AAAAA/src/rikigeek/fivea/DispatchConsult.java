@@ -30,8 +30,11 @@ public class DispatchConsult implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+		Thread.currentThread().setName(node.getAddress().getTCPPort() + "-DispachConsult(" + Thread.currentThread().getId() + ")");
+		LOGGER.finest("DispatchConsult Thread started for receivedMessage #"
+				+ message.getId());
+
+		LOGGER.finest("DispatchConsult Thread is stopping");
 	}
 	
 

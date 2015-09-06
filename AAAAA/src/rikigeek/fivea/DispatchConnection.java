@@ -60,6 +60,8 @@ public class DispatchConnection implements Runnable {
 	private Message doAddNode() {
 		// First we answer with the list of all nodes that we knows
 		NodeAddress[] list;
+		// small trick : initialize the array with an empty NodeAddress array,
+		// so that list will never be null
 		list = node.getDomainNodeList().toArray(new NodeAddress[0]);
 
 		Message response = Message.okAddNode(receivedMessage.getId(),
@@ -112,8 +114,18 @@ public class DispatchConnection implements Runnable {
 	 */
 	private Message doCheckNode() {
 		// Simply answer to the sender
-		Message response = Message.okCheckNode(receivedMessage.getId(),
-				node.getAddress());
+		Message response;
+		// Send an ok only if node is not stopping
+		if (node.isStopped())
+			response = Message.noOk(node.getAddress(), receivedMessage);
+		else
+			response = Message.okCheckNode(receivedMessage.getId(),
+					node.getAddress());
+
+		// In background, compare the received list, and forward if necessary
+		this.threadedAction = Action.NODELISTUPDATED;
+		new Thread(this).start();
+
 		return response;
 	}
 
@@ -122,13 +134,23 @@ public class DispatchConnection implements Runnable {
 	 */
 	@Override
 	public void run() {
-		LOGGER.fine("DispatchConnection Thread starte");
+		Thread.currentThread().setName(
+				node.getAddress().getTCPPort() + "-DispachConnection("
+						+ Thread.currentThread().getId() + ")");
+		LOGGER.finest("DispatchConnection Thread started for receivedMessage #"
+				+ receivedMessage.getId());
 		// We act depending on the threadedAction attribute
 		if (this.threadedAction == Action.NODELISTUPDATED) {
 			forwardLocalNodeListUpdate();
 		}
+		LOGGER.finest("DispatchConnection Thread is stopping");
 	}
 
+	/**
+	 * Method that analyze the received list. It updates the local list. And
+	 * also forward to nodes that are in the local list but not in the received
+	 * list
+	 */
 	private void forwardLocalNodeListUpdate() {
 		// This method is called whenever the node list is updated. So that we
 		// can forward this to any nodes that needs this update
@@ -142,31 +164,33 @@ public class DispatchConnection implements Runnable {
 		if (receivedList != null) {
 			LOGGER.fine("Received a list of " + receivedList.length + " nodes");
 			for (int i = 0; i < receivedList.length; i++) {
-				// Create a new NodeAddress and add it into the local list of
-				// domain nodes
-				// Add it only if its logical clock is greater than the local
-				// one (it means it's a more recent one)
-				NodeAddress remote = new NodeAddress(receivedList[i]);
-				LOGGER.finest("Doing node " + remote.toString());
-				if (node.getDomainNodeList().contains(remote)) {
-					// Already have this node in our list. So update it only if
-					// info is more recent
-					LOGGER.finest(" This one is already in local list  : "
-							+ remote);
-					NodeAddress local = node.getDomainNodeList().floor(remote);
-					LOGGER.finest(" Comparing to local = " + local);
-					if (local.compareLogicalClock(remote.getLogicalClock()) < 0) {
-						// Local value is outdated
-						LOGGER.finest(" Need to update the local one");
-						local.update(remote.isActive(),
-								remote.getLogicalClock());
-					}
-				} else {
-					// Doesn't exist in our local list. Add it
-					LOGGER.finest(" doesn't exist. Adding it");
-					node.getDomainNodeList().add(remote);
-				}
-
+				if (receivedList[i] != null) {
+					// Create a new NodeAddress and add it into the local list
+					// of domain nodes
+					// Add it only if its logical clock is greater than the
+					// local one (it means it's a more recent one)
+					NodeAddress remote = new NodeAddress(receivedList[i]);
+					LOGGER.finest("Doing node " + remote.toString());
+					if (node.getDomainNodeList().contains(remote)) {
+						// Already have this node in our list. So update it only
+						// if info is more recent
+						LOGGER.finest(" This one is already in local list  : "
+								+ remote);
+						NodeAddress local = node.getDomainNodeList().floor(
+								remote);
+						LOGGER.finest(" Comparing to local = " + local);
+						if (local.compareLogicalClock(remote.getLogicalClock()) < 0) {
+							// Local value is outdated
+							LOGGER.finest(" Need to update the local one");
+							local.update(remote.isActive(),
+									remote.getLogicalClock());
+						}
+					} else {
+						// Doesn't exist in our local list. Add it
+						LOGGER.finest(" doesn't exist. Adding it");
+						node.getDomainNodeList().add(remote);
+					} // If contains
+				} // END if not null
 			}
 		} else {
 			LOGGER.fine("Received an empty list of nodes");
@@ -185,7 +209,7 @@ public class DispatchConnection implements Runnable {
 			for (int i = 0; i < list.length; i++) {
 				// Don't send the message to myself or to sender
 				NodeAddress dest = new NodeAddress(list[i]);
-				LOGGER.finest("Sending UPDLIST message to " + dest );
+				LOGGER.finest("Sending UPDLIST message to " + dest);
 				if (dest.compareTo(new NodeAddress(node.getAddress())) != 0
 						&& dest.compareTo(new NodeAddress(receivedMessage
 								.getSource())) != 0) {
@@ -197,8 +221,7 @@ public class DispatchConnection implements Runnable {
 						LOGGER.warning("Unable to connect to the remote node "
 								+ list[i]);
 					}
-				}
-				else {
+				} else {
 					LOGGER.finest("... well, not really sending a message to myself nor to the sender");
 				}
 			}
@@ -213,27 +236,25 @@ public class DispatchConnection implements Runnable {
 		Speaker speaker = new Speaker();
 		NodeAddress me = new NodeAddress(node.getAddress());
 
-		// First : who will we send the message to ? The node before and the
-		// node after me.
-		// If me is the last or the first in the array, let's use the first or
-		// the last instead
-		NodeAddress previous = node.getDomainNodeList().lower(me);
-		// This could be null if me is the first in the array. So, let's use the
-		// last
-		if (previous == null)
-			previous = node.getDomainNodeList().last();
-		NodeAddress next = node.getDomainNodeList().higher(me);
-		// This could be null if me is the last in the array. So, let's use the
-		// first
-		if (next == null)
-			next = node.getDomainNodeList().first();
+		// First : who will we send the message to ? The active node before and
+		// the node after me.
+		NodeAddress previous = node.getPreviousNeighbor();
+		NodeAddress next = node.getNextNeighbor();
 
 		Message msg = Message.quit(me, null);
-		speaker.open(previous);
-		speaker.sendMessage(msg);
-		speaker.close();
-		speaker.open(next);
-		speaker.sendMessage(msg);
+		// Previous is null if no active node has been found
+		if (previous != null) {
+			speaker.open(previous);
+			speaker.sendMessage(msg);
+			speaker.close();
+		}
+		// Again, we don't send message if no active node has been found
+		// and we also don't send message if the next is also the previous
+		if (next != null && next != previous) {
+			speaker.open(next);
+			speaker.sendMessage(msg);
+			speaker.close();
+		}
 	}
 
 	/**
@@ -262,6 +283,8 @@ public class DispatchConnection implements Runnable {
 				LOGGER.fine(" providedList #" + i + " = " + list[i]);
 				if (localList.contains(new NodeAddress(list[i]))) {
 					LOGGER.fine("This one is already in local list");
+					// TODO : check (or not ?) if the local node is more recent.
+					// In that case, maybe we should keep it ?
 					localList.remove(list[i]);
 				}
 			}

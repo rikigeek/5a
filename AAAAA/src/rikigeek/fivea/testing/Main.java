@@ -5,6 +5,7 @@ package rikigeek.fivea.testing;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
+		Thread.currentThread().setName("TestingMain(" + Thread.currentThread().getId() + ")");
 		// TODO Auto-generated method stub
 		String[] pArgs = new String[3];
 		pArgs[0] = "new";
@@ -18,8 +19,8 @@ public class Main {
 		Thread.sleep(1000);
 		int firstPort = 20159;
 		pArgs = new String[2];
-		pArgs[0] = "localhost:20158";
-		for (int i = 0; i < 5; i++) {
+		pArgs[0] = "localhost:20157";
+		for (int i = 0; i < 1; i++) {
 			pArgs[1] = String.format("%d", firstPort + i);
 			NodeTestingThread node = new NodeTestingThread(pArgs);
 			node.start();

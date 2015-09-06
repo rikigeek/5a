@@ -30,7 +30,11 @@ public class DispatchReplication implements Runnable {
 
 	@Override
 	public void run() {
-		// 
+		Thread.currentThread().setName(node.getAddress().getTCPPort() + "-DispatchReplication(" + Thread.currentThread().getId() + ")");
+		LOGGER.finest("DispatchConnection Thread started for receivedMessage #"
+				+ message.getId());
+
+		LOGGER.finest("DispatchConnection Thread is stopping");
 		
 		
 	}

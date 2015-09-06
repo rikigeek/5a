@@ -2,6 +2,13 @@ package rikigeek.fivea.entities;
 
 import java.io.Serializable;
 
+/**
+ * The NodeAddress structure that is exchanged between the nodes, in the messages. It must contains only fields that 
+ * are necessary to the communication.
+ * The class NodeAddress expands this class and can add some extra fields.  
+ * @author Rikigeek
+ *
+ */
 public class MessageNodeAddress implements Serializable {
 	/**
 	 * 
@@ -44,15 +51,21 @@ public class MessageNodeAddress implements Serializable {
 	}
 	
 	/**
-	 * Set the node as an active node
+	 * Set the node as an active node.
+	 * If necessary, update the logical clock.
 	 */
 	public void setActive() {
+		// if the node was not active, it means we changed its state. So we need to update the logicalClock
+		if (!active) increaseLogicalClock();
 		active = true;
 	}
 	/** 
-	 * Set the node as an inactive node (the node is not reachable anymore)
+	 * Set the node as an inactive node (the node is not reachable anymore).
+	 * If necessary, update the logicalClock
 	 */
 	public void setInactive() {
+		// if the node was active, it means we changed its state. So we need to update the logical clock
+		if(active) increaseLogicalClock();
 		active = false;
 	}
 	

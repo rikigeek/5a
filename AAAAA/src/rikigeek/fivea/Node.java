@@ -18,17 +18,21 @@ public class Node {
 		return LOGGER;
 	}
 
-	/**
-	 * Indicate if the program must be stopped
-	 * 
-	 * @return
-	 */
-	public boolean isStopped() {
-		return quit;
-	}
+	// Save the main thread (correspond to the console thread)
+	private Thread consoleThread;
 
+	// Save the scheduler thread
+	private Thread schedulerThread;
+	/**
+	 * The thread that listens on the server Socket (the listener Thread)
+	 */
+	private Thread listenerThread;
+
+	// Flag set to true when node is stopping
 	boolean quit = false;
 
+	// Flag set to true when node is connected to the domain
+	boolean connected = false;
 	// list of other nodes addresses
 	private NodeAddress myAddress;
 	private ConcurrentSkipListSet<NodeAddress> domainNodeList;
@@ -39,10 +43,6 @@ public class Node {
 	 * Listener that will "listen" to all other nodes
 	 */
 	Listener listener;
-	/**
-	 * The thread that listens on the server Socket (the listener Thread)
-	 */
-	Thread threadListener;
 
 	/**
 	 * The domain the node is member of
@@ -51,6 +51,24 @@ public class Node {
 
 	public String getDomain() {
 		return domain;
+	}
+
+	/**
+	 * Indicate if the program must be stopped
+	 * 
+	 * @return
+	 */
+	public boolean isStopped() {
+		return quit;
+	}
+
+	/**
+	 * Indicates if the node is connected to the domain
+	 * 
+	 * @return
+	 */
+	public boolean isConnected() {
+		return connected;
 	}
 
 	public ConcurrentSkipListSet<NodeAddress> getDomainNodeList() {
@@ -74,8 +92,6 @@ public class Node {
 		// Build the listener
 		LOGGER.info("Starting the listener");
 		listener = new Listener(this, port);
-		threadListener = new Thread(listener);
-		threadListener.start();
 
 		// Update the NodeAddress
 		myAddress = new NodeAddress(localName, listener.getPort());
@@ -86,6 +102,10 @@ public class Node {
 		LOGGER.fine("Node #" + this.hashCode() + " / domainNodeList #"
 				+ domainNodeList.hashCode() + " " + domainNodeList.size()
 				+ " elements");
+		// Now the node is fully initialized, we can start the SocketServer (the
+		// listener)
+		listenerThread = new Thread(listener);
+		listenerThread.start();
 	}
 
 	public Node(String domainName, int port) {
@@ -93,18 +113,26 @@ public class Node {
 		// And now, we create a new domain
 		LOGGER.info("Creation of new domain : " + domainName);
 		this.domain = domainName;
-		
-		LOGGER.exiting(this.getClass().getCanonicalName(), "<Constructor(String, int)>");
+		// We are first node of the domain, so we are well connected
+		this.connected = true;
+
+		LOGGER.exiting(this.getClass().getCanonicalName(),
+				"<Constructor(String, int)>");
 	}
 
 	public Node(MessageNodeAddress contact, int port) {
 		this(port);
-		LOGGER.info("Trying to contact existing domain through node : " + contact);
-		newNode(contact);
-		
-		LOGGER.exiting(this.getClass().getCanonicalName(), "<Constructor(MessageNodeAddress, int)>");
+		LOGGER.info("Trying to contact existing domain through node : "
+				+ contact);
+
+		// If node contacted the contact node, then we are well connected to the
+		// domain
+		connected = newNode(contact);
+
+		LOGGER.exiting(this.getClass().getCanonicalName(),
+				"<Constructor(MessageNodeAddress, int)>");
 	}
-	
+
 	/**
 	 * Try to find the local host name of the node
 	 * 
@@ -191,7 +219,11 @@ public class Node {
 		}
 		return false;
 	}
-	
+
+	/**
+	 * Stop the node. This method will also stop all threads, and close all connections.
+	 * It also send a message to the neighbor to inform them this node is stopping
+	 */
 	public void stopNode() {
 		// Create a dispatcher
 		DispatchConnection dconn = new DispatchConnection(this);
@@ -205,8 +237,144 @@ public class Node {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		threadListener.interrupt(); // force the thread to wakeup and so to exit
-		
+		// force all the threads to wakeup and so to exit
+		if (listenerThread != null)
+			listenerThread.interrupt();
+		if (consoleThread != null)
+			consoleThread.interrupt();
+		if (schedulerThread != null)
+			schedulerThread.interrupt();
+
 	}
 
+	/**
+	 * Find the active neighbor next in the list
+	 * @return
+	 */
+	public NodeAddress getNextNeighbor() {
+		// Get my address
+		NodeAddress me = new NodeAddress(getAddress());
+		// Get the list of all nodes of the domain
+		ConcurrentSkipListSet<NodeAddress> nodeList = getDomainNodeList();
+
+		// Get the next node
+		NodeAddress next = nodeList.higher(me);
+		// Loop to the next if it's not active
+		// and break the loop when there are no higher node
+		while (next != null && !next.isActive()) {
+			next = nodeList.higher(next);
+		}
+
+		// next is null when there were no higher node
+		if (next == null) {
+			// get the first node (lowest)
+			next = nodeList.first();
+			// Break the loop when we find an active node
+			// or when we find ourself (then it means we looped through all the list, and no active node has been found
+			while (!next.equals(me) && !next.isActive()) {
+				next = nodeList.higher(next);
+			}
+			// if no active node has been found, we return null value
+			if (next.equals(me)) {
+				next = null;
+			}
+		}
+		
+		return next;
+		
+	}
+	
+	/**
+	 * Find the active neighbor previous in the list
+	 * @return
+	 */
+	public NodeAddress getPreviousNeighbor() {
+		// Get my address
+		NodeAddress me = new NodeAddress(getAddress());
+		// Get the list of all nodes of the domain
+		ConcurrentSkipListSet<NodeAddress> nodeList = getDomainNodeList();
+
+		// Get the previous node
+		NodeAddress previous = nodeList.lower(me);
+		// Loop to the previous if it's not active
+		// and break the loop when there are no lower node
+		while (previous != null && !previous.isActive()) {
+			previous = nodeList.lower(previous);
+		}
+
+		// previous is null when there were no lower node
+		if (previous == null) {
+			// get the last node (highest)
+			previous = nodeList.last();
+			// Break the loop when we find an active node
+			// or when we find ourself (then it means we looped through all the list, and no active node has been found
+			while (!previous.equals(me) && !previous.isActive()) {
+				previous = nodeList.lower(previous);
+			} 
+			// if no active node has been found, we return null value
+			if (previous.equals(me)) {
+				previous = null;
+			}
+		}
+		
+		return previous;
+	}
+
+	/**
+	 * Get the thread of the console
+	 * @return
+	 */
+	public Thread getConsoleThread() {
+		return consoleThread;
+	}
+
+	/** 
+	 * Set the thread of the console
+	 * @param consoleThread
+	 */
+	void setConsoleThread(Thread consoleThread) {
+		this.consoleThread = consoleThread;
+	}
+
+	/**
+	 * Get the thread of the scheduler
+	 * @return
+	 */
+	public Thread getSchedulerThread() {
+		return schedulerThread;
+	}
+
+	/** 
+	 * Set the thread of the scheduler
+	 * @param schedulerThread
+	 */
+	void setSchedulerThread(Thread schedulerThread) {
+		this.schedulerThread = schedulerThread;
+	}
+
+	/**
+	 * Get the thread of the listener
+	 * @return
+	 */
+	public Thread getListenerThread() {
+		return listenerThread;
+	}
+
+	/**
+	 * Get the configuration value : scheduler period (time the scheduler must wait between 2 jobs)
+	 * @return the time to wait in ms
+	 */
+	public int getSchedulerPeriod() {
+		// Default is 60s period for the scheduler. 
+		return 60 * 1000;
+	}
+	
+	/**
+	 * Get the maximum connection failure allowed to a node before we set it as inactive
+	 * @return
+	 */
+	public static int getMaxFailureConnect() {
+		return 5;
+	}
 }
+

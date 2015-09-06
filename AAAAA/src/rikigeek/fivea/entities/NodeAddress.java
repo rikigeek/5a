@@ -1,5 +1,7 @@
 package rikigeek.fivea.entities;
 
+import rikigeek.fivea.Node;
+
 public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAddress>{
 
 	/**
@@ -8,6 +10,7 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 	private static final long serialVersionUID = 1L;
 
 	protected int hashValue;
+	protected byte failureConnectCount = 0;
 	
 	public NodeAddress(String ip, int port) {
 		super(ip, port);
@@ -24,9 +27,13 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 	}
 	@Override
 	public int compareTo(NodeAddress o) {
+		if (o == null) return 1;
 		return this.hashCode() - o.hashCode();
 	}
-	
+	public boolean equals(NodeAddress o) {
+		if (o == null) return false;
+		return this.hashCode() == o.hashCode();
+	}
 	 @Override
 	 public int hashCode() {
 		 // TODO : return the hashvalue cache ?
@@ -36,4 +43,19 @@ public class NodeAddress extends MessageNodeAddress implements Comparable<NodeAd
 		 return hash;
 	 }
 
+	 public void increaseConnectFailure() {
+		 failureConnectCount++;
+		 if (failureConnectCount > Node.getMaxFailureConnect()) {
+			 this.setInactive();
+		 }
+	 }
+	 
+	 public void setActive() {
+		 super.setActive();
+		 // Also reset the failure connection count
+		 this.failureConnectCount = 0;
+	 }
+	public byte getConnectFailure() {
+		return this.failureConnectCount;
+	}
 }

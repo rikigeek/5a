@@ -1,6 +1,5 @@
 package rikigeek.fivea;
 
-import java.io.IOException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -64,7 +63,11 @@ public class Main {
 		if (port == 0) {
 			LOGGER.config("using default port : " + Listener.DEFAULT_PORT);
 			port = Listener.DEFAULT_PORT;
+		} else {
+			LOGGER.config("using specified port : " + port);
 		}
+		// Set a name to the thread (now we have the listening port)
+		Thread.currentThread().setName(port + "-Main(" + Thread.currentThread().getId() + ")");
 		// Parameters are parsed
 		LOGGER.finest("Building the node");
 		Node node;
@@ -80,8 +83,24 @@ public class Main {
 
 		// Create a client to send data to itself
 		//new rikigeek.aaaaa.testing.ClientTesting();
-		
-		startConsole(node);
+
+		// Start the console if the node is connected to the domain
+		if (node.isConnected()) {
+			// Start the scheduler and save it into the node
+			Scheduler scheduler = new Scheduler(node);
+			Thread schedulerThread = new Thread(scheduler);
+			node.setSchedulerThread(schedulerThread);
+			schedulerThread.start();
+			
+			// Start the console after saving the console thread instance
+			node.setConsoleThread(Thread.currentThread());
+			startConsole(node);
+		}
+		else {
+			node.stopNode();
+			LOGGER.severe("The node could not connect to the domain... Exiting");
+			System.out.println("The node could not connect to the domain... Exiting");
+		}
 		
 		LOGGER.exiting(Main.class.getCanonicalName(), "static main(...)");
 	}
@@ -94,8 +113,9 @@ public class Main {
 		// Start the client console
 		new Console(node).start();
 
-		LOGGER.info("Console is closed, the node must stop");
-		node.stopNode();
+		LOGGER.info("Console is closed. The node should already has been closed");
+		// We stop the node if it was not already closed
+		if (!node.isStopped()) node.stopNode();
 	}
 
 }

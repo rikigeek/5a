@@ -17,7 +17,7 @@ public class Message implements Serializable {
 	// PERTERESULELEC, PERTECONNECT, TREECONNECT, TREEWEIGHT, BROTHER,
 	// DISCONNECT, REQINS, WAKEUP }
 	public enum Verb {
-		ADDNODE, UPDLIST, QUIT, CHECKNODE, FIND, GETDOC, NEWDOC, REPLICATEDOC, GETNODELIST
+		ADDNODE, UPDLIST, QUIT, CHECKNODE, FIND, GETDOC, NEWDOC, REPLICATEDOC, GETNODELIST, STOP
 	}
 
 	public enum Answer {
@@ -115,9 +115,10 @@ public class Message implements Serializable {
 		return m;
 	}
 
-	public static Message checkNode(MessageNodeAddress source) {
+	public static Message checkNode(MessageNodeAddress source, MessageNodeAddress list[]) {
 		Message m = new Message(source, Subject.CONNECTION, Verb.CHECKNODE,
 				Answer.YES);
+		m.domainListNode = list;
 		return m;
 	}
 
@@ -150,6 +151,11 @@ public class Message implements Serializable {
 				Answer.OK);
 		m.id = messageId;
 		m.domainListNode = nodeList;
+		return m;
+	}
+	
+	public static Message doStop(MessageNodeAddress source) {
+		Message m= new Message(source, Subject.CONFIG, Verb.STOP, Answer.NO);
 		return m;
 	}
 

@@ -30,6 +30,7 @@ public class Dispatcher implements Runnable {
 
 	@Override
 	public void run() {
+		Thread.currentThread().setName(node.getAddress().getTCPPort() + "-Dispacher(" + Thread.currentThread().getId() + ")");
 		LOGGER.info("Receiving a new connection");
 		receivesObject();
 	}

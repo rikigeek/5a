@@ -60,6 +60,10 @@ public class Listener implements Runnable {
 
 	@Override
 	public void run() {
+		// Set a name to the thread
+		Thread current = Thread.currentThread();
+		current.setName(node.getAddress().getTCPPort() + "-Listener("
+				+ current.getId() + ")");
 		// ServerSocket socket;
 		LOGGER.info("Waiting for a connection on port " + port);
 		try {
@@ -77,8 +81,9 @@ public class Listener implements Runnable {
 												// in the pool
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					//LOGGER.finer(e.toString());
+					//e.printStackTrace();
+					
 					LOGGER.warning("IOException on the ServerSocket while accept(), we must stop the listener");
 					LOGGER.throwing("Listener", "run", e);
 				}

@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import rikigeek.fivea.*;
 import rikigeek.fivea.entities.Message;
 import rikigeek.fivea.entities.MessageNodeAddress;
 

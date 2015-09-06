@@ -80,9 +80,9 @@ public class Speaker {
 		// Closing everything
 		LOGGER.fine("closing streams and socket");
 		try {
-			inputStream.close();
-			outputStream.close();
-			socket.close();
+			if (inputStream != null) inputStream.close();
+			if (outputStream != null) outputStream.close();
+			if (socket != null) socket.close();
 		} catch (IOException e) {
 			LOGGER.warning("Failed to close the speaker");
 			LOGGER.throwing("Speaker", "Close", e);
