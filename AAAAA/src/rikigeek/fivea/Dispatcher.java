@@ -1,12 +1,9 @@
 package rikigeek.fivea;
 
-import java.io.BufferedReader;
 import java.util.logging.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 import rikigeek.fivea.entities.Message;
@@ -60,8 +57,8 @@ public class Dispatcher implements Runnable {
 						switch (receivedMessage.getSubject()) {
 						case CONSULT:
 							LOGGER.info("Received consultation message");
-							DispatchConsult.getInstance().threatMessage(
-									receivedMessage, this.node);
+							response = new DispatchConsult(node).receivesMessage(
+									receivedMessage);
 							break;
 						case CONFIG:
 							LOGGER.info("Received configuration message");
@@ -74,8 +71,7 @@ public class Dispatcher implements Runnable {
 							break;
 						case REPLICATION:
 							LOGGER.info("Received replication message");
-							DispatchReplication.getInstance().threatMessage(
-									receivedMessage, this.node);
+							response = new DispatchReplication(node).receivesMessage(receivedMessage);
 							break;
 						case RESERVED:
 							LOGGER.info("Received reserved message");
@@ -99,7 +95,7 @@ public class Dispatcher implements Runnable {
 					} else {
 						LOGGER.warning("Received an object with wrong class : "
 								+ recv.getClass().getName());
-						// TODO Maybe the client is waiting for a response.
+						// TODO CONNECT Maybe the client is waiting for a response.
 					}
 				} // If received object is null, we don't do anything special
 				else {
@@ -116,53 +112,12 @@ public class Dispatcher implements Runnable {
 			connection.close();
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.throwing(this.getClass().getCanonicalName(), "receivesObject()", e);
+			LOGGER.severe("Failure while opening, or closing the streams");
 		}
 
 	}
 
-	@SuppressWarnings("unused")
-	private void receivesString() {
-		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					connection.getInputStream()));
-			PrintWriter writer = new PrintWriter(connection.getOutputStream());
-			boolean stop = false;
-
-			while (!stop && !connection.isClosed() && connection.isConnected()) {
-
-				String line = reader.readLine(); // First we read the header
-													// line to know what to do
-													// with this message
-				if (line != null) {
-					if (line.toUpperCase().equalsIgnoreCase("STOP"))
-						stop = true;
-					if (line.equalsIgnoreCase("SHUTDOWN")) {
-						// TODO : shutdown the server
-					}
-					String s = String.format("Receiving data {0}", line);
-					LOGGER.fine(s);
-
-					writer.println("Well received my lord");
-					if (stop)
-						writer.println("Bye bye");
-					writer.flush();
-				} else {
-					LOGGER.warning("Cannot read on the socket");
-					stop = true;
-				}
-			}
-			LOGGER.info("Exiting and closing connection");
-			reader.close();
-			writer.close();
-			connection.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
 
 	@Override
 	protected void finalize() throws Throwable {

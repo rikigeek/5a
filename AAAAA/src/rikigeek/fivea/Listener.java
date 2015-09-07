@@ -90,9 +90,7 @@ public class Listener implements Runnable {
 			}
 			socket.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			LOGGER.warning("IOException on the ServerSocket while creating it or closigin it, we must stop the listener");
+			LOGGER.warning("IOException on the ServerSocket while creating it or closing it, we must stop the listener");
 			LOGGER.throwing("Listener", "run", e);
 		}
 		LOGGER.exiting(this.getClass().getCanonicalName(), "run()");

@@ -3,12 +3,16 @@ package rikigeek.fivea;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Logger;
 
 import rikigeek.fivea.entities.Message;
 import rikigeek.fivea.entities.MessageNodeAddress;
 import rikigeek.fivea.entities.NodeAddress;
+import rikigeek.fivea.storage.Resource;
+import rikigeek.fivea.storage.StorageManager;
 
 public class Node {
 
@@ -75,7 +79,7 @@ public class Node {
 		return this.domainNodeList;
 	}
 
-	private Node(int port) {
+	private Node(int port, String storagePath) {
 		LOGGER.info("Creation of a node on port " + port);
 		// Creation of a node.
 		// A node is checking the domain change
@@ -102,26 +106,43 @@ public class Node {
 		LOGGER.fine("Node #" + this.hashCode() + " / domainNodeList #"
 				+ domainNodeList.hashCode() + " " + domainNodeList.size()
 				+ " elements");
+		
+		// Storage initialization 
+		setStoragePath(storagePath);
+		if (!storageManager.isLoaded()) {
+			// Storage manager not loaded
+			LOGGER.severe("Storage manager failed to load. Aborting process");
+			this.stopNode();
+			return;
+		}
+		
+		
 		// Now the node is fully initialized, we can start the SocketServer (the
 		// listener)
 		listenerThread = new Thread(listener);
 		listenerThread.start();
 	}
 
-	public Node(String domainName, int port) {
-		this(port);
+	public Node(String domainName, int port, String storagePath) {
+		this(port, storagePath);
 		// And now, we create a new domain
 		LOGGER.info("Creation of new domain : " + domainName);
 		this.domain = domainName;
 		// We are first node of the domain, so we are well connected
 		this.connected = true;
+		
+		// Because it's a new domain, we must check if the root folder is initialized
+		Resource rootFolder = storageManager.getRessource("/", "", true);
+		if (rootFolder == null) {
+			storageManager.createNewRessource("/",  "", true);
+		}
 
 		LOGGER.exiting(this.getClass().getCanonicalName(),
 				"<Constructor(String, int)>");
 	}
 
-	public Node(MessageNodeAddress contact, int port) {
-		this(port);
+	public Node(MessageNodeAddress contact, int port, String storagePath) {
+		this(port, storagePath);
 		LOGGER.info("Trying to contact existing domain through node : "
 				+ contact);
 
@@ -234,8 +255,8 @@ public class Node {
 		try {
 			listener.stop();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOGGER.throwing(this.getClass().getCanonicalName(), "stopNode()", e);
+			LOGGER.severe("Failure while stopping the listener");
 		}
 		// force all the threads to wakeup and so to exit
 		if (listenerThread != null)
@@ -247,6 +268,29 @@ public class Node {
 
 	}
 
+	/**
+	 * Get the root folder owners of the domain. 
+	 * @return an array of the nodes that are supposed to own the root folder
+	 * This array can contain null values ! 
+	 */
+	public NodeAddress[] getRootOwners() {
+		// The list of all root folder owners
+		NodeAddress[] list = new NodeAddress[3];
+		int i = 0;
+		// Get the list of all nodes of the domain
+		ConcurrentSkipListSet<NodeAddress> nodeList = getDomainNodeList();
+		NodeAddress node = nodeList.first();
+		// We take the first 3 active nodes.
+		while (node != null && i < 3) {
+			if (node.isActive()) { // Found 1 active
+				list[i] = node;
+				i++;
+			}
+			// Get the next node in the list
+			node = nodeList.higher(node);
+		}
+		return list;
+	}
 	/**
 	 * Find the active neighbor next in the list
 	 * @return
@@ -375,6 +419,42 @@ public class Node {
 	 */
 	public static int getMaxFailureConnect() {
 		return 5;
+	}
+
+	private String getDefaultStoragePath() {
+		return "C:\\TEMP\\5A\\PORT" + listener.getPort();
+	}
+	public Path getStoragePath() {
+		return storageManager.getStoragePath();
+	}
+	protected void setStoragePath(String path) {
+		String storagePath;
+		if (path != null && path != "") {
+			storagePath = path;
+		}
+		else {
+			storagePath = getDefaultStoragePath();
+		}
+		storageManager = new StorageManager(this, storagePath);
+	}
+	public StorageManager getStorageManager() {
+		return this.storageManager;
+	}
+	private StorageManager storageManager;
+	
+	public NodeAddress[] findResourceHost(Resource resource, int nbRepl ) {
+		NodeAddress[] result = new NodeAddress[nbRepl];
+		int count = 0;
+		//TODO improve the way to choose node to host the resource;
+		Iterator<NodeAddress> iterator = getDomainNodeList().iterator();
+		Boolean higherHashCode = false;
+		while (iterator.hasNext() && !higherHashCode) {
+			result[count] = iterator.next();
+			// We stop at the first NodeAddress that has a hashcode smaller than the resource hashCode
+			higherHashCode = result[count].hashCode() < resource.hashCode();
+			count = (count+1) % nbRepl;
+		}
+		return result;
 	}
 }
 

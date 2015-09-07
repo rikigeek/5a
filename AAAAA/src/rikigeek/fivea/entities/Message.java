@@ -17,7 +17,10 @@ public class Message implements Serializable {
 	// PERTERESULELEC, PERTECONNECT, TREECONNECT, TREEWEIGHT, BROTHER,
 	// DISCONNECT, REQINS, WAKEUP }
 	public enum Verb {
-		ADDNODE, UPDLIST, QUIT, CHECKNODE, FIND, GETDOC, NEWDOC, REPLICATEDOC, GETNODELIST, STOP
+		ADDNODE, UPDLIST, QUIT, CHECKNODE, 
+		FIND, DEL, UPLOAD, 
+		NEWDOC, DOWNLOAD, FREE, REPLICATENODE, UPDATEFOLDER,
+		GETNODELIST, STOP
 	}
 
 	public enum Answer {
@@ -45,8 +48,10 @@ public class Message implements Serializable {
 	protected MessageNodeAddress sourceNodeAddress;
 	protected String domainName;
 	protected MessageNodeAddress[] domainListNode;
-	protected MessageRessource[] ressourceList;
+	protected MessageResource[] resourceList;
 	protected byte[] data;
+	protected String fileName;
+	protected int count;
 
 	private Message(MessageNodeAddress source, Subject subject, Verb verb,
 			Answer answer) {
@@ -101,10 +106,10 @@ public class Message implements Serializable {
 	}
 
 	public static Message quit(MessageNodeAddress source,
-			MessageRessource[] ressourceList) {
+			MessageResource[] ressourceList) {
 		Message m = new Message(source, Subject.CONNECTION, Verb.QUIT,
 				Answer.NO);
-		m.ressourceList = ressourceList;
+		m.resourceList = ressourceList;
 		return m;
 	}
 
@@ -131,11 +136,17 @@ public class Message implements Serializable {
 
 	// ADDNODE, UPDLIST, QUIT, CHECKNODE, FIND, GETDOC, NEWDOC, REPLICATEDOC
 	public static Message find(MessageNodeAddress source,
-			MessageRessource ressource) {
-		Message m = new Message(source, Subject.REPLICATION, Verb.FIND,
+			String filename) {
+		Message m = new Message(source, Subject.CONSULT, Verb.FIND,
 				Answer.YES);
-		m.ressourceList = new MessageRessource[1];
-		m.ressourceList[0] = ressource;
+		m.fileName = filename;
+		return m;
+	}
+	public static Message okFind(int messageId, MessageNodeAddress source, MessageResource resource) {
+		Message m = new Message(source, Subject.CONSULT, Verb.FIND, Answer.OK);
+		m.id = messageId;
+		m.resourceList = new MessageResource[1];
+		m.resourceList[0] = resource;
 		return m;
 	}
 
@@ -158,6 +169,53 @@ public class Message implements Serializable {
 		Message m= new Message(source, Subject.CONFIG, Verb.STOP, Answer.NO);
 		return m;
 	}
+	
+	public static Message newDoc(MessageNodeAddress source, MessageResource resource) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.NEWDOC, Answer.YES);
+		MessageResource list[] = new MessageResource[1];
+		list[0] = resource;
+		m.resourceList = list;
+		return m;
+	}
+	
+	public static Message okNewDoc(int messageId, MessageNodeAddress source, int replicationCount) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.NEWDOC, Answer.OK);
+		m.id = messageId;
+		m.count = replicationCount;
+		return m;
+	}
+	
+	public static Message free(MessageNodeAddress source, MessageResource resource, MessageNodeAddress downloadSource) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.FREE, Answer.YES);
+		MessageResource list[] = new MessageResource[1];
+		list[0] = resource;
+		m.resourceList = list;
+		MessageNodeAddress[] nodeList = new MessageNodeAddress[1];
+		nodeList[0] = downloadSource;
+		m.domainListNode = nodeList;
+		return m;
+	}
+	public static Message okFree(int messageId, MessageNodeAddress source) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.FREE, Answer.OK);
+		m.id = messageId;
+		return m;
+	}
+	public static Message download(MessageNodeAddress source, MessageResource resource) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.DOWNLOAD, Answer.YES);
+		MessageResource list[] = new MessageResource[1];
+		list[0] = resource;
+		m.resourceList = list;
+		return m;
+	}
+	public static Message okDownload(int messageId, MessageNodeAddress source, byte[] data) {
+		Message m = new Message(source, Subject.REPLICATION, Verb.DOWNLOAD, Answer.OK);
+		m.id = messageId;
+		m.data = data;
+		return m;
+	}
+
+	
+	
 
 	/**
 	 * Default Error Message we can return to the sender
@@ -268,8 +326,8 @@ public class Message implements Serializable {
 	 * 
 	 * @return
 	 */
-	public MessageRessource[] getRessourceList() {
-		return this.ressourceList;
+	public MessageResource[] getResourceList() {
+		return this.resourceList;
 	}
 
 	/**
@@ -279,6 +337,21 @@ public class Message implements Serializable {
 	 */
 	public byte[] getData() {
 		return data;
+	}
+	
+	/**
+	 * Get fileName field
+	 * @return
+	 */
+	public String getFileName() {
+		return fileName;
+	}
+	/**
+	 * Get the count field
+	 * @return
+	 */
+	public int getCount() {
+		return count;
 	}
 
 	@Override

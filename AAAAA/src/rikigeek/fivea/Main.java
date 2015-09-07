@@ -18,7 +18,7 @@ public class Main {
 		Handler[] handlers = root.getHandlers();
 		if (handlers[0] instanceof ConsoleHandler) {
 			handlers[0].setFormatter(new ThreadFormatter());
-			// TODO : remove the manual setting for logLevel (used only in
+			// TODO remove the manual setting for logLevel (used only in
 			// Eclipse IDE)
 			handlers[0].setLevel(Level.ALL);
 			root.setLevel(Level.ALL);
@@ -26,13 +26,16 @@ public class Main {
 
 		/*
 		 * Minimal args parsing Possible options are if we connect to an
-		 * existing domain Main contact:port [TCP Port] or if we create a new
-		 * domain Main new domainName [TCP Port]
+		 * existing domain 
+		 * Main contact:port [TCP Port [Storage Path]]  
+		 * or if we create a new domain 
+		 * Main new domainName [TCP Port [Storage Path]]
 		 */
 		String domainName = "";
 		int port = 0;
 		String contact = "";
 		int contactPort;
+		String storagePath = "";
 		MessageNodeAddress contactNode = null;
 
 		// no error check... exception will be thrown to the console
@@ -43,6 +46,10 @@ public class Main {
 			// Eventually get the port number
 			if (argc > 2) {
 				port = Integer.parseInt(args[2]);
+			}
+			// Eventually get the storage path
+			if (argc > 3) {
+				storagePath = args[3];
 			}
 		} else {
 			// Joining an existing domain
@@ -55,6 +62,10 @@ public class Main {
 			if (argc > 1) {
 				// the TCP port
 				port = Integer.parseInt(args[1]);
+			}
+			// Eventually get the storage path
+			if (argc > 2) {
+				storagePath = args[2];
 			}
 		}
 
@@ -72,12 +83,12 @@ public class Main {
 		LOGGER.finest("Building the node");
 		Node node;
 		if (contactNode != null) {
-			// Join a domain
-			node = new Node(contactNode, port);
+			// Join a domain, and set the storagePath
+			node = new Node(contactNode, port, storagePath);
 			LOGGER.finest("the node is built");
 		} else {
-			// New domain
-			node = new Node(domainName, port);
+			// New domain, and set the storagePath
+			node = new Node(domainName, port, storagePath);
 			LOGGER.finest("A new domain is created, and the node is built");
 		}
 

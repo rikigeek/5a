@@ -99,7 +99,7 @@ public class DispatchConnection implements Runnable {
 	 * Do the QUIT message
 	 */
 	private Message doQuit() {
-		// TODO : check the list of ressources
+		// TODO REPLIC check the list of ressources
 		//
 		NodeAddress source = new NodeAddress(receivedMessage.getSource());
 		if (node.getDomainNodeList().contains(source)) {
@@ -283,7 +283,7 @@ public class DispatchConnection implements Runnable {
 				LOGGER.fine(" providedList #" + i + " = " + list[i]);
 				if (localList.contains(new NodeAddress(list[i]))) {
 					LOGGER.fine("This one is already in local list");
-					// TODO : check (or not ?) if the local node is more recent.
+					// TODO CONNECT check (or not ?) if the local node is more recent.
 					// In that case, maybe we should keep it ?
 					localList.remove(list[i]);
 				}

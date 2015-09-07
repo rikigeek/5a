@@ -91,6 +91,33 @@ public class Speaker {
 
 	}
 
+	public Message sendMessageToFirstAvailable(Message message, MessageNodeAddress[] nodeList) {
+		if (isConnected()) this.close();
+		
+		Message result = null;
+		for (int i = 0; i <  nodeList.length && result == null; i++) {
+			MessageNodeAddress node = nodeList[i];
+			if (node != null) {
+				open(node);
+				if (isConnected()) {
+					// Ok, we found a root owner available
+					// Send the message
+					result = sendMessage(message);
+					if (result != null) {
+						// We got a result
+						if (!result.isOk()) {
+							LOGGER.warning("Node " + node
+									+ " answered with non OK");
+							LOGGER.fine(result.toString());
+							result = null; // we ignore not positive answer
+						} // isok
+					} // not null
+				} // connected
+				close();
+			} // list[i] not null
+		} // for
+		return result;
+	}
 	/**
 	 * Send a message to the connected node
 	 * @param msg

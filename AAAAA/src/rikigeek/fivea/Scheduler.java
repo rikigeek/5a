@@ -41,7 +41,7 @@ public class Scheduler implements Runnable {
 			if (next != null && !next.equals(previous))
 				checkNeighbors(next);
 
-			//TODO : check the neighbor states, and initiate a replication if neighbors are inactive
+			//TODO REPLIC check the neighbor states, and initiate a replication if neighbors are inactive
 			
 			// Sleep for the configured value
 			try {
